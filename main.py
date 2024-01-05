@@ -20,7 +20,7 @@ class App:
         self.title = tk.Label(root, text="Learn Python", font=("Arial", 14))
         self.title.pack()
 
-        self.point_display = tk.Label(root, text=f"Points: {self.point}", font=("Roboto", 12))
+        self.point_display = tk.Label(root, text=f"Points: {self.point}", font=("Roboto", 12), bd = 3, background='lightgrey')
         self.point_display.pack(padx=10, pady=10)
 
         self.question_display = tk.Label(root, text="", font=("Ubuntu", 13))
