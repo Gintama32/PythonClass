@@ -4,22 +4,25 @@ import openai
 import os
 import random
 from tkinter import scrolledtext
+import sqlite3
+
 
 # Load environment variables from .env
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class App:
-    def __init__(self, root):
+    def __init__(self, root, username):
         self.point = 0
         self.chat_log = [{'role': 'assistant', 'content': 'You are a python programming professor. Give response if the user answer is correct or not.'}]
         self.root = root
         self.root.title("Python Class")
         self.root.geometry("800x500")
-
+        self.username = username
         self.title = tk.Label(root, text="Learn Python", font=("Arial", 14))
         self.title.pack()
-
+        open_btn = tk.Button(self.root, text = 'Menu', command = self.toggle_menu, bg = 'lightblue', font=('Times New Roman', 15))
+        open_btn.pack(side = 'left', anchor = 'n')
         self.point_display = tk.Label(root, text=f"Points: {self.point}", font=("Roboto", 12), bd = 3, background='lightgrey')
         self.point_display.pack(padx=10, pady=10)
 
@@ -44,7 +47,15 @@ class App:
 
         self.assistant_response_text = scrolledtext.ScrolledText(root, height=15, wrap=tk.WORD, font=("Ubuntu", 12))
         self.assistant_response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
+#Database connection, db information access point
+        self.conn = sqlite3.connect('userdata.db')
+        self.cur = self.conn.cursor()
+        self.cur.execute("SELECT * FROM userdata WHERE username = ?",(self.username,))
+        userdata = self.cur.fetchone()
+        if userdata:
+            self.rank = userdata[3]
+            self.mode = userdata[4]
+            self.highest_record = userdata[5]
     def question_bank(self):
         # Your list of questions remains the same
         questions = [
@@ -70,6 +81,26 @@ class App:
             'What is a generator?'
         ]
         return random.choice(questions)
+    #  menu
+    def toggle_menu(self):
+        menu = tk.Frame(self.root, width= 200, height = 500, bg = '#3E8EDE')
+        name = tk.Label(menu, text= f"Learner: {self.username}", font = ('Times New Roman', 15), bg = '#3E8EDE')
+        record = tk.Label(menu, text = f"Highest Point: {self.highest_record}", font = ('Times New Roman', 15), bg = '#3E8EDE')
+        mode = tk.Label(menu, text= f"Mode: {self.mode}",font= ('Times New Roman', 15), bg = '#3E8EDE')
+        rank = tk.Label(menu,text = f"Rank: {self.rank}", font= ('Times New Roman', 15), bg = '#3E8EDE')
+        change_mode_btn = tk.Button(menu, text = 'Change Difficulty', font=('Times New Roman', 13), bg = 'green')
+        match_rank_btn = tk.Button(menu, text = 'Rank Match', font= ('Times New Roman', 13), bg = 'Red')
+        name.place(x= 5, y = 50,)
+        record.place(x= 5, y = 100)
+        mode.place(x = 5, y = 150)
+        rank.place(x= 5, y = 200)
+        change_mode_btn.place(x = 10, y = 250)
+        match_rank_btn.place(x = 10, y = 290)
+        menu.place(x=0,y=0)
+        def dele():
+            menu.destroy()
+        close_btn = tk.Button(menu, text = 'close', command = dele)
+        close_btn.place(x=5,y=10)
 
     def generate_question(self):
         new_question = self.question_bank()
@@ -77,7 +108,10 @@ class App:
         self.chat_log.append({'role': 'assistant', 'content': new_question})
 
     def add_points(self, point):
+        self.highest_record += point
         self.point += point
+        self.cur.execute("UPDATE userdata SET highest_record = ? WHERE username = ?", (self.highest_record,self.username))
+        self.conn.commit()
         self.point_display.config(text=f"Points: {self.point}")
     def get_input_text(self):
         current_question = self.question_display.cget("text")
