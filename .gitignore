@@ -1,3 +1,6 @@
 .env
 userdatabase.py
 userdata.db
+easy questions.txt
+hard questions.txt
+intermediate questions.txt
